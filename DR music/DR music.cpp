@@ -8,6 +8,7 @@
 #include <thread>
 #include <stdio.h>
 #include <tchar.h>
+#include <string>
 #include <windows.h>
 using namespace std;
 
@@ -31,6 +32,53 @@ int main() {
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
+
+	vector<string> songNames = {
+		"Black Knife", "Its TV Time", "Hammer Of Justice", "Burning Eyes", "A DARK ZONE",
+		"From Now On", "The Seccond Sanctuary", "The Third Sanctuary", "Dark Sanctuary", "The World Revolving", "BIG SHOT"
+		, "GUARDIAN", "ANOTHER HIM", "Beginning", "School", "Susie", "The Door", "Cliffs",
+		"The Chase", "The Legend", "Lancer", "Rude Buster", "Empty Town", "Weird Birds", "Field of Hopes and Dreams"
+		, "Fanfare", "Lantern", "I'm Very Bad", "Checker Dance"
+	};
+	vector<string> paths = {
+		"./Black Knife", "./Its TV Time", "./Hammer Of Justice", "./Burning Eyes", "./A DARK ZONE",
+		"./From Now On", "./The Second Sanctuary", "./The Third Sanctuary", "./Dark Sanctuary",
+		"./GUARDIAN", "./The World Revolving", "./BIG SHOT", "./ANOTHER HIM", "./Beginning", "./School", "./Susie",
+		"./The Door", "./Cliffs", "./The Chase", "./The Legend", "./Lancer", "./Rude Buster"
+		, "./Empty Town", "./Weird Birds", "./Field of Hopes and Dreams",
+		"./Fanfare (from Rose of Winter)", "./Lantern", "./I'm Very Bad", "./Checker Dance"
+	};
+	vector<string> output_paths = {
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/knight.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/tenna_battle.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_extra_boss.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/nightmare_boss_heavy.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/pumpkin_boss.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_battle",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone2_alt_longer_test.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone3.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_wip.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/titan_battle.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/joker.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/spamton_neo_mix_ex_wip.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/AUDIO_ANOTHERHIM.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/mus_introcar.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/mus_school.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/s_neo.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepydoor.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepylandscape.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepychase.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/legend.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/lancer.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/battle.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/castletown_empty.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/bird.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/field_of_hopes.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/fanfare.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/shop1.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/lancer_susie.ogg",
+		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/checkers.ogg"
+	};
 
 	if (!filesystem::exists("C:/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe"))
 	{
@@ -61,6 +109,7 @@ int main() {
 
 	while (mainLoop == true)
 	{
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		cout << "Enter the number of the song(s) you want to randomise. Type 'all' to do all, or 'exit' to proceed." << endl
 			<< "1. Black Knife" << endl
 			<< "2. Its TV Time!" << endl
@@ -71,83 +120,15 @@ int main() {
 			<< "7. The Second Sanctuary" << endl
 			<< "8. The Third Sanctuary" << endl
 			<< "9. Dark Sanctuary" << endl
-			<< "10. GUARDIAN" << endl;
-
+			<< "10. GUARDIAN" << endl
+			<< "Type all to randomise all songs (Including ones not displayed) and proceed to deltarune" << endl
+			<< "Type exit to close and proceed to deltarune" << endl;
+		cout << endl << "Type Your Input:";
 		cin >> input;
 
-		if (input == "1") {
-			songName = "Black Knife";
-			path = "./Black Knife";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/knight.ogg";
-		}
-		else if (input == "2") {
-			songName = "Its TV Time";
-			path = "./Its TV Time";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/tenna_battle.ogg";
-		}
-		else if (input == "3") {
-			songName = "Hammer Of Justice";
-			path = "./Hammer Of Justice";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_extra_boss.ogg";
-		}
-		else if (input == "4") {
-			songName = "Burning Eyes";
-			path = "./Burning Eyes";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/nightmare_boss_heavy.ogg";
-		}
-		else if (input == "5") {
-			songName = "A DARK ZONE";
-			path = "./A DARK ZONE";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/pumpkin_boss.ogg";
-		}
-		else if (input == "6") {
-			songName = "From Now On";
-			path = "./From Now On";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_battle";
-		}
-		else if (input == "7") {
-			songName = "The Seccond Sanctuary";
-			path = "./The Second Sanctuary";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone2_alt_longer_test,ogg";
-		}
-		else if (input == "8") {
-			songName = "The Third Sanctuary";
-			path = "./The Third Sanctuary";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone3.ogg";
-		}
-		else if (input == "9") {
-			songName = "Dark Sanctuary";
-			path = "./Dark Sanctuary";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_wip.ogg";
-		}
-		else if (input == "10") {
-			songName = "GUARDIAN";
-			path = "./GUARDIAN";
-			output_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/mus/titan_battle.ogg";
-		}
-		else if (input == "all") {
-			vector<string> songNames = {
-				"Black Knife", "Its TV Time", "Hammer Of Justice", "Burning Eyes", "A DARK ZONE",
-				"From Now On", "The Seccond Sanctuary", "The Third Sanctuary", "Dark Sanctuary", "GUARDIAN"
-			};
-			vector<string> paths = {
-				"./Black Knife", "./Its TV Time", "./Hammer Of Justice", "./Burning Eyes", "./A DARK ZONE",
-				"./From Now On", "./The Second Sanctuary", "./The Third Sanctuary", "./Dark Sanctuary", "./GUARDIAN"
-			};
-			vector<string> output_paths = {
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/knight.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/tenna_battle.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_extra_boss.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/nightmare_boss_heavy.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/pumpkin_boss.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_battle",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone2_alt_longer_test,ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone3.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_wip.ogg",
-				"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/titan_battle.ogg"
-			};
+		if (input == "all") {
 
-			for (int i = 0; i < songNames.size(); i++) {
+			for (int i = 0; i < output_paths.size(); i++) {
 				string songNameAll = songNames[i];
 				string pathAll = paths[i];
 				string outputPathAll = output_paths[i];
@@ -187,6 +168,8 @@ int main() {
 					cout << "No .ogg files found for: " << songNameAll << endl;
 				}
 			}
+			mainLoop = false;
+			path = ".";
 			continue; // skip the rest of the loop for "all"
 		}
 		else if (input == "exit") {
@@ -194,10 +177,17 @@ int main() {
 			path = ".";
 		}
 		else {
-			SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
-			cout << "Error: Invalid Input" << endl;
-			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-			isValid = false;
+			//Single sellection songs
+			int songIndex = stoi(input) - 1;
+			if (songIndex >= 0 && songIndex < songNames.size()) {
+				songName = songNames[songIndex];
+				path = paths[songIndex];
+				output_path = output_paths[songIndex];
+			}
+			else {
+				cout << "Invalid selection.\n";
+			}
+
 		}
 
 		//Getting the ogg files and adding them to a array
@@ -230,7 +220,8 @@ int main() {
 				cout << "No .ogg files detected for selected song" << endl << endl;
 			}
 			SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
-			cout << "Successfully Randomised Song: " << songName << endl;
+			cout << endl << "Successfully Randomised Song: " << songName << endl << endl;
+			this_thread::sleep_for(std::chrono::milliseconds(500));
 			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		}
 		else if (isValid == true && input != "exit") {
