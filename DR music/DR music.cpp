@@ -1,44 +1,131 @@
+#undef UNICODE
+#undef _UNICODE
+
 #include <fstream>
 #include <iostream>
 #include <filesystem>
-#include <vector>
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <chrono>
 #include <thread>
-#include <stdio.h>
-#include <tchar.h>
-#include <string>
 #include <windows.h>
+#include <string>
 using namespace std;
 
-int main() {
-	//Set random seed to the system time
-	srand(time(0));
-	bool mainLoop = true;
-	string input;
-	string deltarune_path;
-	string output_path;
-	vector<string> oggs;
-	int randomOgg = 0;
-	string dummyString;
-	string path;
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	bool isValid = true;
-	string songName;
+HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+bool isValid = true;
+string input;
+vector<string> oggs;
+string songName;
 
-	STARTUPINFO si;
+bool copyOggs(vector<string> oggsVector, const string& path, const string& output_path, mt19937& rng, string songName)
+{
+
+	if (path != "." && filesystem::exists(path))
+	{
+		SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
+		cout << "Successfully Randomised Song: " << songName << endl;
+		//this_thread::sleep_for(std::chrono::milliseconds(500));
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+	}
+	else if (isValid == true && input != "exit") {
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
+		cout << "Error: No folder detected for: " << songName << endl;
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+		return false;
+	}
+	else if (isValid == false) {
+		isValid = true;
+	}
+
+	oggsVector.clear();
+
+	for (auto const& it : std::filesystem::directory_iterator{ path }) {
+		if (it.path().extension() == ".ogg") {
+			oggsVector.push_back(it.path().string());
+		}
+	}
+
+	if (oggsVector.empty()) {
+		cout << "No .ogg files detected for: " << songName << endl;
+		return false;
+	}
+
+	uniform_int_distribution<> dist(0, oggsVector.size() - 1);
+	int randomOgg = dist(rng);
+
+	ifstream f1(oggsVector[randomOgg], ios::binary);
+	ofstream f2(output_path, ios::binary);
+
+	if (!f1.is_open()) {
+		cerr << "Error: Could not open file to copy: " << oggsVector[randomOgg] << endl;
+		return false;
+	}
+	if (!f2.is_open()) {
+		cerr << "Error: Could not open destination file: " << output_path << endl;
+		return false;
+	}
+
+	f2 << f1.rdbuf();
+
+	f1.close();
+	f2.close();
+	oggs = oggsVector;
+	return true;
+}
+
+
+int main() {
+	random_device rd;
+	mt19937 rng(rd());
+	bool mainLoop = true;
+	string deltarune_path;
+	string deltarune_root_path;
+	string output_path;
+	string path;
+
+	STARTUPINFOA si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
+
+	vector<string> drives = { "C", "D" };
+	bool found = false;
+
+	for (const string& drive : drives) {
+		string exePath = drive + ":/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe";
+		if (filesystem::exists(exePath)) {
+			cout << "DELTARUNE path detected!" << endl << endl;
+			deltarune_path = exePath;
+			deltarune_root_path = drive + ":/SteamLibrary/steamapps/common/DELTARUNE";
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		if (!filesystem::exists("config.txt")) {
+			ofstream file("config.txt");
+			cout << "Enter the path to your DELTARUNE installation: ";
+			cin >> deltarune_path;
+			file << deltarune_path;
+			file.close();
+		}
+		else {
+			cout << "Please enter your deltarune path:" << endl << endl;
+			cin >> deltarune_path;
+		}
+	}
 	vector<string> songNames = {
-		"Black Knife", "Its TV Time", "Hammer Of Justice", "Burning Eyes", "A DARK ZONE",
-		"From Now On", "The Seccond Sanctuary", "The Third Sanctuary", "Dark Sanctuary", "The World Revolving", "BIG SHOT"
-		, "GUARDIAN", "ANOTHER HIM", "Beginning", "School", "Susie", "The Door", "Cliffs",
-		"The Chase", "The Legend", "Lancer", "Rude Buster", "Empty Town", "Weird Birds", "Field of Hopes and Dreams"
-		, "Fanfare", "Lantern", "I'm Very Bad", "Checker Dance"
+	"Black Knife", "Its TV Time", "Hammer Of Justice", "Burning Eyes", "A DARK ZONE",
+	"From Now On", "The Seccond Sanctuary", "The Third Sanctuary", "Dark Sanctuary", "The World Revolving", "BIG SHOT"
+	, "GUARDIAN", "ANOTHER HIM", "Beginning", "School", "Susie", "The Door", "Cliffs",
+	"The Chase", "The Legend", "Lancer", "Rude Buster", "Empty Town", "Weird Birds", "Field of Hopes and Dreams"
+	, "Fanfare", "Lantern", "I'm Very Bad", "Checker Dance", "Quiet Autumn", "Scarlet Forest",
+		"Thrash Machine","Vs Lancer","Basement","Imminent Death","Vs Susie","Card Castle","Rouxls Kaard","April 2012"
+		, "Hip Shop", "Gallery", "Chaos King", "Darkness Falls", "The Circus", "Friendship", "THE HOLY", "Your Power",
+		"A Town Called Hometown", "You Can Always Come Home", "Don't Forget", "Before The Story"
 	};
 	vector<string> paths = {
 		"./Black Knife", "./Its TV Time", "./Hammer Of Justice", "./Burning Eyes", "./A DARK ZONE",
@@ -46,84 +133,77 @@ int main() {
 		"./GUARDIAN", "./The World Revolving", "./BIG SHOT", "./ANOTHER HIM", "./Beginning", "./School", "./Susie",
 		"./The Door", "./Cliffs", "./The Chase", "./The Legend", "./Lancer", "./Rude Buster"
 		, "./Empty Town", "./Weird Birds", "./Field of Hopes and Dreams",
-		"./Fanfare (from Rose of Winter)", "./Lantern", "./I'm Very Bad", "./Checker Dance"
+		"./Fanfare", "./Lantern", "./I'm Very Bad", "./Checker Dance", "./Quiet Autumn", "./Scarlet Forest", "./Thrash Machine"
+		, "./Vs Lancer", "./Basement", "./Imminent Death", "./Vs Susie", "./Card Castle", "./Rouxls Kaard", "./April 2012", "./Hip Shop"
+		, "./Gallery", "./Chaos King", "./Darkness Falls", "./The Circus", "./Friendship", "./THE HOLY", "./Your Power", "./A Town Called Hometown"
+		, "./You Can Always Come Home", "./Don't Forget", "./Before The Story"
 	};
 	vector<string> output_paths = {
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/knight.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/tenna_battle.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_extra_boss.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/nightmare_boss_heavy.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/pumpkin_boss.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/ch4_battle",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone2_alt_longer_test.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_zone3.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/church_wip.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/titan_battle.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/joker.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/spamton_neo_mix_ex_wip.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/AUDIO_ANOTHERHIM.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/mus_introcar.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/mus_school.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/s_neo.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepydoor.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepylandscape.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/creepychase.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/legend.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/lancer.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/battle.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/castletown_empty.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/bird.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/field_of_hopes.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/fanfare.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/shop1.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/lancer_susie.ogg",
-		"D:/SteamLibrary/steamapps/common/DELTARUNE/mus/checkers.ogg"
+		"/mus/knight.ogg",
+		"/mus/tenna_battle.ogg",
+		"/mus/ch4_extra_boss.ogg",
+		"/mus/nightmare_boss_heavy.ogg",
+		"/mus/pumpkin_boss.ogg",
+		"/mus/ch4_battle",
+		"/mus/church_zone2_alt_longer_test.ogg",
+		"/mus/church_zone3.ogg",
+		"/mus/church_wip.ogg",
+		"/mus/titan_battle.ogg",
+		"/mus/joker.ogg",
+		"/mus/spamton_neo_mix_ex_wip.ogg",
+		"/mus/AUDIO_ANOTHERHIM.ogg",
+		"/mus/mus_introcar.ogg",
+		"/mus/mus_school.ogg",
+		"/mus/s_neo.ogg",
+		"/mus/creepydoor.ogg",
+		"/mus/creepylandscape.ogg",
+		"/mus/creepychase.ogg",
+		"/mus/legend.ogg",
+		"/mus/lancer.ogg",
+		"/mus/battle.ogg",
+		"/mus/castletown_empty.ogg",
+		"/mus/bird.ogg",
+		"/mus/field_of_hopes.ogg",
+		"/mus/fanfare.ogg",
+		"/mus/shop1.ogg",
+		"/mus/lancer_susie.ogg",
+		"/mus/checkers.ogg",
+		"/mus/quiet_autumn.ogg",
+		"/mus/forest.ogg",
+		"/mus/thrashmachine.ogg",
+		"/mus/lancerfight.ogg",
+		"/mus/basement.ogg",
+		"/mus/tense.ogg",
+		"/mus/vs_susie.ogg",
+		"/mus/card_castle.ogg",
+		"/mus/ruruskaado.ogg",
+		"/mus/april_2012.ogg",
+		"/mus/hip_shop.ogg",
+		"/mus/GALLERY.ogg",
+		"/mus/kingboss.ogg",
+		"/mus/AUDIO_DARKNESS.ogg",
+		"/mus/prejoker.ogg",
+		"/mus/friendship.ogg",
+		"/mus/THE_HOLY.ogg",
+		"/mus/snd_usefountain.ogg",
+		"/mus/town.ogg",
+		"/mus/home.ogg",
+		"/mus/dontforget.ogg",
+		"/mus/AUDIO_STORY.ogg"
 	};
-
-	if (!filesystem::exists("C:/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe"))
+	for (int i = 0; i < output_paths.size(); i++)
 	{
-		if (!filesystem::exists("D:/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe"))
-		{
-			if (!filesystem::exists("config.txt")) {
-				ofstream file("config.txt");
-				cout << "Enter the path to your DELTARUNE installation: ";
-				cin >> deltarune_path;
-				deltarune_path = deltarune_path + "/mus";
-				file << deltarune_path;
-				file.close();
-			}
-			else {
-				cout << "DELTARUNE path detected!" << endl << endl;
-				deltarune_path = ".";
-			}
-		}
-		else {
-			cout << "DELTARUNE path detected!" << endl << endl;
-			deltarune_path = "D:/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe";
-		}
-	}
-	else {
-		cout << "DELTARUNE path detected!" << endl << endl;
-		deltarune_path = "C:/SteamLibrary/steamapps/common/DELTARUNE/DELTARUNE.exe";
+		output_paths[i] = deltarune_root_path + output_paths[i];
 	}
 
 	while (mainLoop == true)
 	{
+		isValid = true;
 		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		cout << "Enter the number of the song(s) you want to randomise. Type 'all' to do all, or 'exit' to proceed." << endl
-			<< "1. Black Knife" << endl
-			<< "2. Its TV Time!" << endl
-			<< "3. Burning Eyes" << endl
-			<< "4. Hammer Of Justice" << endl
-			<< "5. A DARK ZONE" << endl
-			<< "6. From Now On (Battle 2)" << endl
-			<< "7. The Second Sanctuary" << endl
-			<< "8. The Third Sanctuary" << endl
-			<< "9. Dark Sanctuary" << endl
-			<< "10. GUARDIAN" << endl
-			<< "Type all to randomise all songs (Including ones not displayed) and proceed to deltarune" << endl
-			<< "Type exit to close and proceed to deltarune" << endl;
-		cout << endl << "Type Your Input:";
+		cout << "Enter all to randomise all avalible songs and proceed to deltarune" << endl
+			<< "Enter exit to close and proceed to deltarune" << endl
+			<< "Enter Help for help" << endl;
+		cout << endl << "Type Your Input: ";
 		cin >> input;
 
 		if (input == "all") {
@@ -133,48 +213,34 @@ int main() {
 				string pathAll = paths[i];
 				string outputPathAll = output_paths[i];
 				vector<string> oggsAll;
-
-				if (!filesystem::exists(pathAll)) {
-					SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
-					cout << "Error: No folder for song: " << songNameAll << endl;
-					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-					continue;
-				}
-
-				for (auto const& it : std::filesystem::directory_iterator{ pathAll }) {
-					if (it.path().extension().string() != ".ogg") continue;
-					oggsAll.push_back(it.path().string());
-				}
-
-				if (!oggsAll.empty()) {
-					int randomIndex = rand() % oggsAll.size();
-					ifstream f1(oggsAll[randomIndex], ios::binary);
-					ofstream f2(outputPathAll, ios::binary);
-
-					if (!f1.is_open() || !f2.is_open()) {
-						cerr << "Error: Cannot copy for song: " << songNameAll << endl;
-						continue;
-					}
-
-					f2 << f1.rdbuf();
-					f1.close();
-					f2.close();
-
-					SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
-					cout << "Randomized: " << songNameAll << endl;
-					SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-				}
-				else {
-					cout << "No .ogg files found for: " << songNameAll << endl;
-				}
+				copyOggs(oggsAll, pathAll, outputPathAll, rng, songNameAll);
 			}
 			mainLoop = false;
 			path = ".";
 			continue; // skip the rest of the loop for "all"
 		}
-		else if (input == "exit") {
+		else if (input == "exit" || input == "Exit" || input == "EXIT") {
 			mainLoop = false;
 			path = ".";
+		}
+		else if (input == "help" || input == "Help" || input == "HELP")
+		{
+			isValid = false;
+			SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
+			cout << "Welcome to the DELTARUNE music tool!" << endl;
+			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+			cout	<< "To use this tool, create a folder in the app's directory folder (Where the .exe is) with the name of the song." << endl
+				<< "Then place any .ogg files you want to randomise for that song in the folder (name them anything)." << endl
+				<< "Typing 'Songs' will give a list of all avalible songs" << endl << "You can then type the number of the song you want to randomize, if you just want to randomize a singe song" << endl
+				<< "Typing 'All' will randomize all songs you have folders and files for and open Deltarune." << endl
+				<< "Typing 'Exit' will open Deltarune and close the program" << endl << endl;
+		}
+		else if (input == "songs"|| input == "Songs"|| input == "SONGS" || input == "song"|| input == "Song"|| input == "SONG")
+		{
+			for (int i = 0; i < songNames.size(); ++i) {
+				cout << i + 1 << ". " << songNames[i] << endl;
+			}
+			isValid = false;
 		}
 		else {
 			//Single sellection songs
@@ -189,54 +255,17 @@ int main() {
 			}
 
 		}
-
-		//Getting the ogg files and adding them to a array
-		if (path != "." && filesystem::exists(path))
+		if (isValid == true)
 		{
-			oggs.clear();
-			for (auto const& it : std::filesystem::directory_iterator{ path }) {
-				if (it.path().extension().string() != ".ogg") continue;
-				oggs.push_back(it.path().string());
-			}
-			if (!oggs.empty())
-			{
-				randomOgg = rand() % (oggs.size());
-				ifstream f1(oggs[randomOgg], ios::binary);
-				ofstream f2(output_path, ios::binary);
-
-				if (!f1.is_open()) {
-					std::cerr << "Error: Could not open file to copy" << std::endl;
-					f1.close();
-					return 0;
-				}
-				if (!f2.is_open()) {
-					std::cerr << "Error: Could not open destination file" << std::endl;
-					f1.close();
-					return 0;
-				}
-				f2 << f1.rdbuf();
-			}
-			else {
-				cout << "No .ogg files detected for selected song" << endl << endl;
-			}
-			SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
-			cout << endl << "Successfully Randomised Song: " << songName << endl << endl;
-			this_thread::sleep_for(std::chrono::milliseconds(500));
-			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+			copyOggs(oggs, path, output_path, rng, songName);
 		}
-		else if (isValid == true && input != "exit") {
-			SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
-			cout << "Error: No folder detected for selected song" << endl;
-			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		}
-		else if (isValid == false) {
-			isValid = true;
-		}
+		//Getting the ogg files and adding them to a array
 	}
 
-	TCHAR cmdLine[] = _T("D:\\SteamLibrary\\steamapps\\common\\DELTARUNE\\DELTARUNE.exe");
 
-	if (!CreateProcess(
+	char cmdLine[] = "D:\\SteamLibrary\\steamapps\\common\\DELTARUNE\\DELTARUNE.exe";
+
+	CreateProcessA(
 		NULL,
 		cmdLine,
 		NULL,
@@ -244,13 +273,11 @@ int main() {
 		FALSE,
 		0,
 		NULL,
-		_T("D:\\SteamLibrary\\steamapps\\common\\DELTARUNE"),
+		"D:\\SteamLibrary\\steamapps\\common\\DELTARUNE",
 		&si,
 		&pi
-	)) {
-		_tprintf(_T("CreateProcess failed (%d).\n"), GetLastError());
-		return 1;
-	}
+	);
+
 
 	SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE);
 	cout << "Running DELTARUNE: " << endl;
