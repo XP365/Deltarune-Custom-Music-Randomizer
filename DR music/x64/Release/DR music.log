@@ -1,0 +1,13 @@
+﻿  DR music.cpp
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(147,55): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(147,55): warning C4267:         with
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(147,55): warning C4267:         [
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(147,55): warning C4267:             _Ty=int
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(147,55): warning C4267:         ]
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(310,39): warning C4101: 'e': unreferenced local variable
+  Generating code
+  543 of 762 functions (71.3%) were compiled, the rest were copied from previous compilation.
+    80 functions were new in current compilation
+    46 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  DR music.vcxproj -> C:\Users\Niko\C++ projects\DR music\x64\Release\Deltarune Music Manager.exe

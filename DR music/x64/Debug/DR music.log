@@ -1,8 +1,9 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(538,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (DR music.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   DR music.cpp
-C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(145,55): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(145,55): warning C4267:         with
-C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(145,55): warning C4267:         [
-C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(145,55): warning C4267:             _Ty=int
-C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(145,55): warning C4267:         ]
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(155,55): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(155,55): warning C4267:         with
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(155,55): warning C4267:         [
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(155,55): warning C4267:             _Ty=int
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(155,55): warning C4267:         ]
+C:\Users\Niko\C++ projects\DR music\DR music\DR music.cpp(318,39): warning C4101: 'e': unreferenced local variable
   DR music.vcxproj -> C:\Users\Niko\C++ projects\DR music\x64\Debug\Deltarune Music Manager.exe

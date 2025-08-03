@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <string>
 #include <sstream>
+#include <shobjidl.h> 
 using namespace std;
 
 struct presetData
@@ -107,35 +108,44 @@ vector<string> output_paths = {
 	"/mus/AUDIO_STORY.ogg"
 };
 
+IFileOpenDialog* pfd = NULL;
+HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
 
 
-
-bool copyOggs(const string& path, const string& output_path, mt19937& rng, string songName)
+bool copyOggs(const string& path, const string& output_path, mt19937& rng, string songName, bool isImport = false)
 {
 	vector<string> oggsVector;
+
 	if (path != "." && filesystem::exists(path))
 	{
 		SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
-		cout << "Successfully Randomised Song: " << songName << endl;
+		if (isImport)
+		{
+			cout << "Imported Song: " << songName << endl;
+		}
+		else
+			cout << "Successfully Randomised Song: " << songName << endl;
 		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		return true;
-	}
-	else if (isValid == true && input != "exit") {
-		SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
-		cout << "Error: No folder detected for: " << songName << endl;
-		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		return false;
 	}
 	else if (isValid == false) {
 		isValid = true;
 	}
 	oggsVector.clear();
-
+	if (filesystem::exists(path))
+	{
 		for (auto const& it : filesystem::directory_iterator{ path }) {
 			if (it.path().extension() == ".ogg") {
 				oggsVector.push_back(it.path().string());
 			}
 		}
+	}
+	else {
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
+		cout << "Error: No folder found for the song: " << songName << endl;
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+		return false;
+	}
 
 	if (oggsVector.empty()) {
 		cout << "No .ogg files detected for: " << songName << endl;
@@ -149,10 +159,10 @@ bool copyOggs(const string& path, const string& output_path, mt19937& rng, strin
 	ofstream f2(output_path, ios::binary);
 
 	if (!f1.is_open()) {
-		cerr << "Error: Could not open file to copy: " << oggsVector[randomOgg] << endl;
+		cout << "Error: Could not open file to copy: " << oggsVector[randomOgg] << endl;
 	}
 	if (!f2.is_open()) {
-		cerr << "Error: Could not open destination file: " << output_path << endl;
+		cout << "Error: Could not open destination file: " << output_path << endl;
 	}
 
 	f2 << f1.rdbuf();
@@ -163,6 +173,44 @@ bool copyOggs(const string& path, const string& output_path, mt19937& rng, strin
 	return true;
 }
 
+wstring OpenFileDialog() {
+	std::wstring path;
+
+	if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE))) {
+		IFileDialog* pFileDialog = nullptr;
+		if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&pFileDialog)))) {
+			if (SUCCEEDED(pFileDialog->Show(nullptr))) {
+				IShellItem* pItem = nullptr;
+				if (SUCCEEDED(pFileDialog->GetResult(&pItem))) {
+					PWSTR pszFilePath = nullptr;
+					if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath))) {
+						path = pszFilePath;
+						CoTaskMemFree(pszFilePath);
+					}
+					pItem->Release();
+				}
+			}
+			pFileDialog->Release();
+		}
+		CoUninitialize();
+	}
+
+	return path; // Empty if nothing selected or failed
+}
+
+
+string WStringToString(const std::wstring& wstr) {
+	if (wstr.empty()) return {};
+
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1,
+		nullptr, 0, nullptr, nullptr);
+	std::string result(size_needed - 1, 0); // exclude null terminator
+	WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1,
+		&result[0], size_needed, nullptr, nullptr);
+	return result;
+}
+
+
 bool receiveInput()
 {
 	SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
@@ -172,14 +220,12 @@ bool receiveInput()
 	cout << endl << "> ";
 	cin >> input;
 
-	if (input == "all") {
-
+	if (input == "all" || input == "All" || input == "ALL") {
 		for (int i = 0; i < output_paths.size(); i++) {
 			string songNameAll = songNames[i];
 			string pathAll = paths[i];
-			string outputPathAll = output_paths[i];
-			vector<string> oggsAll;
-			copyOggs(pathAll, outputPathAll, rng, songNameAll);
+			string outputPathAll = deltarune_root_path + output_paths[i]; // Make sure full path
+			copyOggs(pathAll, outputPathAll, rng, songNameAll, false);
 		}
 		mainLoop = false;
 		path = ".";
@@ -198,7 +244,8 @@ bool receiveInput()
 		SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 		cout << "To use this tool, create a folder in the app's directory folder (Where the .exe is) with the name of the song." << endl
 			<< "Then place any .ogg files you want to randomise for that song in the folder (name them anything)." << endl
-			<< "Typing 'Songs' will give a list of all avalible songs" << endl << "You can then type the number of the song you want to randomize, if you just want to randomize a singe song" << endl
+			<< "Typing 'Songs' will give a list of all avalible songs" << endl
+			<< "You can then type the number of the song you want to randomize, if you just want to randomize a singe song" << endl
 			<< "Typing 'All' will randomize all songs you have folders and files for and open Deltarune." << endl
 			<< "Typing 'Exit' will open Deltarune and close the program" << endl << endl;
 		return true;
@@ -211,22 +258,82 @@ bool receiveInput()
 		isValid = false;
 		return true;
 	}
+	else if (input == "import" || input == "Import" || input == "IMPORT" || input == "inport" || input == "Inport" || input == "INPORT")
+	{
+		wstring selectedPathW = OpenFileDialog();
+		string importOggPath = WStringToString(selectedPathW);
+
+		if (importOggPath.empty()) {
+			cout << "Import cancelled or no file selected." << endl;
+			return true;
+		}
+
+		filesystem::path sourcePath(importOggPath);
+		if (sourcePath.extension() != ".ogg") {
+			cout << "Error: Selected file is not an .ogg audio file." << endl;
+			return false;
+		}
+
+		cout << "Enter the song number to add the .ogg to (or 999 to abort import): ";
+		int songInput;
+		cin >> songInput;
+
+		if (songInput == 999) {
+			cout << "Import aborted." << endl;
+			return true;
+		}
+
+		if (songInput < 0 || songInput >= (int)songNames.size()) {
+			cout << "Invalid song number." << endl;
+			return false;
+		}
+
+		filesystem::path destFolder(paths[songInput]);
+		filesystem::path destFile = destFolder / sourcePath.filename();
+
+		try {
+			filesystem::create_directories(destFolder);
+			filesystem::copy_file(sourcePath, destFile, filesystem::copy_options::overwrite_existing);
+
+			// Update global variables so later calls use this selection
+			path = paths[songInput];
+			songName = songNames[songInput];
+			output_path = deltarune_root_path + output_paths[songInput];
+			SetConsoleTextAttribute(hConsole, FOREGROUND_GREEN);
+			cout << "Imported " << sourcePath.filename().string() << " to " << destFolder.string() << endl;
+			SetConsoleTextAttribute(hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+			return true;
+		}
+		catch (const filesystem::filesystem_error& e) {
+			cout << "Error copying file: " << e.what() << endl;
+			return false;
+		}                                 
+	}
 	else {
-		//Single sellection songs
-		int songIndex = stoi(input) - 1;
-		if (songIndex >= 0 && songIndex < songNames.size()) {
+		// Single selection songs
+		int songIndex = -1;
+		try {
+			songIndex = stoi(input) - 1;
+		}
+		catch (const std::invalid_argument& e) {
+			cout << "Please enter a number." << endl;
+			return false;
+		}
+
+		if (songIndex >= 0 && songIndex < (int)songNames.size()) {
 			songName = songNames[songIndex];
 			path = paths[songIndex];
-			output_path = output_paths[songIndex];
+			output_path = deltarune_root_path + output_paths[songIndex];
 			return true;
 		}
 		else {
 			cout << "Invalid selection." << endl;
 			return false;
 		}
-
+		copyOggs(path, output_path, rng, songName, false);
 	}
 }
+
 
 
 
@@ -311,11 +418,6 @@ int main() {
 	{
 		isValid = true;
 		receiveInput();
-		if (isValid == true)
-		{
-			copyOggs(path, output_path, rng, songName);
-		}
-		//Getting the ogg files and adding them to a array
 	}
 
 
